@@ -10,7 +10,7 @@ from models.cotizacion import Cotizacion
 import services.storage as db
 
 
-# ── Utilidades de consola ──────────────────────────────────────────────────────
+# Utilidades de consola 
 
 def limpiar():
     print("\n" * 2)
@@ -49,7 +49,7 @@ def pausar():
     input("\n  Presiona Enter para continuar...")
 
 
-# ── Gestión de clientes ───────────────────────────────────────────────────────
+# Gestión de clientes    
 
 def seleccionar_o_crear_cliente() -> Cliente:
     titulo("CLIENTE")
@@ -85,7 +85,7 @@ def _registrar_cliente() -> Cliente:
     return cliente
 
 
-# ── Gestión de productos ──────────────────────────────────────────────────────
+#  Gestión de productos     
 
 def agregar_productos() -> list[Producto]:
     titulo("AGREGAR PRODUCTOS / SERVICIOS")
@@ -109,7 +109,7 @@ def agregar_productos() -> list[Producto]:
     return productos
 
 
-# ── Nueva cotización ──────────────────────────────────────────────────────────
+#  Nueva cotización 
 
 def nueva_cotizacion():
     cliente   = seleccionar_o_crear_cliente()
@@ -142,7 +142,7 @@ def _exportar_pdf(cot: Cotizacion):
         print("     Ejecuta: pip install fpdf2")
 
 
-# ── Historial de cotizaciones ─────────────────────────────────────────────────
+#  Historial de cotizaciones 
 
 def ver_historial():
     titulo("HISTORIAL DE COTIZACIONES")
@@ -192,7 +192,7 @@ def _detalle_cotizacion(id_cot: int):
     pausar()
 
 
-# ── Menú principal ────────────────────────────────────────────────────────────
+# ── Menú principal
 
 def menu_principal():
     db.inicializar_bd()
