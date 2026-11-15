@@ -27,9 +27,9 @@ LINEA  = (215, 210, 225)
 class PlantillaPDF(FPDF):
 
     def setup_fonts(self):
-        self.add_font("CAL", style="",  fname=_FONT_REGULAR, uni=True)
-        self.add_font("CAL", style="B", fname=_FONT_BOLD,    uni=True)
-        self.add_font("CAL", style="I", fname=_FONT_ITALIC,  uni=True)
+        self.add_font("CAL", style="",  fname=_FONT_REGULAR)
+        self.add_font("CAL", style="B", fname=_FONT_BOLD)
+        self.add_font("CAL", style="I", fname=_FONT_ITALIC)
 
     def header(self):
         # Banda morada superior
@@ -189,7 +189,15 @@ def generar_plantilla() -> Path:
     pdf.cell(5,  5, "")
     pdf.cell(90, 5, "Firma del cliente / Vo. Bo.", align="C")
 
-    pdf.output(str(ruta))
+    try:
+        pdf.output(str(ruta))
+    except PermissionError:
+        ruta_alt = PDF_DIR / "PLANTILLA_COTIZACION_MORADA.pdf"
+        pdf.output(str(ruta_alt))
+        print(f"\n  [!] '{ruta.name}' está abierto en un visor de PDF.")
+        print(f"      Se generó la versión morada como: {ruta_alt.name}")
+        print(f"      Cierra el archivo en tu lector de PDF para actualizar el original.\n")
+        return ruta_alt
     return ruta
 
 
