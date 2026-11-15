@@ -72,16 +72,47 @@ def seleccionar_o_crear_cliente() -> Cliente:
 
 def _registrar_cliente() -> Cliente:
     titulo("NUEVO CLIENTE")
+    nombre  = pedir("Nombre completo")
+    empresa = pedir("Empresa", obligatorio=False)
+
+    while True:
+        nit = pedir("NIT / Cédula", obligatorio=False)
+        if nit:
+            cliente_existente = db.obtener_cliente_por_nit(nit)
+            if cliente_existente:
+                print(f"\n  [!] Ya existe un cliente registrado con el NIT/Cédula '{nit}':")
+                print(f"      Nombre : {cliente_existente.nombre}")
+                print(f"      Empresa: {cliente_existente.empresa or 'N/A'}")
+                if confirmar("  ¿Deseas usar este cliente existente?"):
+                    return cliente_existente
+                print("  Ingresa un NIT diferente o déjalo vacío para continuar.\n")
+                continue
+        break
+
+    direccion = pedir("Dirección", obligatorio=False)
+    telefono  = pedir("Teléfono", obligatorio=False)
+    email     = pedir("Email", obligatorio=False)
+
     cliente = Cliente(
-        nombre    = pedir("Nombre completo"),
-        empresa   = pedir("Empresa", obligatorio=False),
-        nit       = pedir("NIT / Cédula", obligatorio=False),
-        direccion = pedir("Dirección", obligatorio=False),
-        telefono  = pedir("Teléfono", obligatorio=False),
-        email     = pedir("Email", obligatorio=False),
+        nombre    = nombre,
+        empresa   = empresa,
+        nit       = nit,
+        direccion = direccion,
+        telefono  = telefono,
+        email     = email,
     )
-    db.guardar_cliente(cliente)
-    print(f"\n  Cliente registrado con ID: {cliente.id_cliente}")
+
+    try:
+        db.guardar_cliente(cliente)
+        print(f"\n  Cliente registrado con ID: {cliente.id_cliente}")
+    except Exception as e:
+        if "UNIQUE constraint failed" in str(e):
+            print(f"\n  [!] El NIT '{nit}' ya está registrado en la base de datos.")
+            cliente_existente = db.obtener_cliente_por_nit(nit)
+            if cliente_existente:
+                return cliente_existente
+        raise e
+
     return cliente
 
 
@@ -222,3 +253,4 @@ def menu_principal():
 
 if __name__ == "__main__":
     menu_principal()
+

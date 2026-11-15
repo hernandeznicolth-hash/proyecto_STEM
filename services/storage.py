@@ -70,15 +70,35 @@ def inicializar_bd():
 # ── CLIENTES ──────────────────────────────────────────────────────────────────
 
 def guardar_cliente(cliente: Cliente) -> Cliente:
+    # Convertir cadenas vacías a None para permitir múltiples registros sin NIT (NULL en SQLite)
+    nit_valor = cliente.nit.strip() if cliente.nit and cliente.nit.strip() else None
+    empresa_valor = cliente.empresa.strip() if cliente.empresa and cliente.empresa.strip() else None
+    direccion_valor = cliente.direccion.strip() if cliente.direccion and cliente.direccion.strip() else None
+    telefono_valor = cliente.telefono.strip() if cliente.telefono and cliente.telefono.strip() else None
+    email_valor = cliente.email.strip() if cliente.email and cliente.email.strip() else None
+
     with _conectar() as conn:
         cur = conn.execute(
             """INSERT INTO clientes (nombre, empresa, nit, direccion, telefono, email)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (cliente.nombre, cliente.empresa, cliente.nit,
-             cliente.direccion, cliente.telefono, cliente.email)
+            (cliente.nombre, empresa_valor, nit_valor,
+             direccion_valor, telefono_valor, email_valor)
         )
         cliente.id_cliente = cur.lastrowid
     return cliente
+
+
+def obtener_cliente_por_nit(nit: str) -> Cliente | None:
+    if not nit or not str(nit).strip():
+        return None
+    with _conectar() as conn:
+        fila = conn.execute(
+            "SELECT * FROM clientes WHERE nit = ?",
+            (str(nit).strip(),)
+        ).fetchone()
+    if fila:
+        return _fila_a_cliente(fila)
+    return None
 
 
 def buscar_clientes(termino: str) -> list[Cliente]:
