@@ -1,4 +1,4 @@
-"""Genera el PDF de una cotización a partir de la plantilla base."""
+"""Genera cotizaciones usando la plantilla morada como base."""
 
 from pathlib import Path
 
@@ -6,105 +6,123 @@ import pymupdf
 from models.cotizacion import Cotizacion
 
 PDF_DIR = Path(__file__).resolve().parent.parent / "pdfs"
-TEMPLATE_PATH = PDF_DIR / "PLANTILLA_COTIZACION.pdf"
-
-EMPRESA = "Mi Empresa S.A.S"
-NIT_EMPRESA = "900.123.456-7"
-TEL_EMPRESA = "+57 (601) 123-4567"
-EMAIL_EMPRESA = "ventas@miempresa.com"
-COLOR_MORADO = (112, 48, 160)
+TEMPLATE_PATH = PDF_DIR / "PLANTILLA_COTIZACION_MORADA.pdf"
+MAX_PRODUCTOS = 10
 
 
-def _normalize_color(color):
-    if isinstance(color, (tuple, list)) and len(color) in (3, 4):
-        if max(color) <= 1:
-            return tuple(color)
-        return tuple(c / 255 for c in color)
-    return (0, 0, 0)
-
-
-def _insert_text(page, x: float, y: float, text: str, *, size: int = 11, color=(0, 0, 0), font="helv"):
-    if text is None:
+def _insert_text(page, rect, text: str, *, size: float = 10, align: int = pymupdf.TEXT_ALIGN_LEFT):
+    if text is None or text == "":
         return
-    page.insert_text((x, y), str(text), fontsize=size, fontname=font, color=_normalize_color(color))
 
-
-def _insert_textbox(page, x: float, y: float, w: float, h: float, text: str, *, size: int = 10, color=(0, 0, 0)):
-    if not text:
-        return
-    page.insert_textbox(pymupdf.Rect(x, y, x + w, y + h), str(text), fontsize=size, color=_normalize_color(color))
+    text = str(text)
+    for font_size in (size, size - 0.5, size - 1, size - 1.5, size - 2):
+        remaining = page.insert_textbox(
+            rect,
+            text,
+            fontsize=font_size,
+            fontname="helv",
+            align=align,
+        )
+        if remaining >= 0:
+            return
+    raise ValueError(f"El texto no cabe en el espacio de la plantilla: {text}")
 
 
 def generar_pdf(cot: Cotizacion) -> Path:
-    """Genera una cotización nueva a partir del PDF de plantilla."""
-    PDF_DIR.mkdir(exist_ok=True)
-    if not TEMPLATE_PATH.exists():
-        raise FileNotFoundError(f"No se encontró la plantilla: {TEMPLATE_PATH}")
+    """Genera un PDF con los datos de la cotización y devuelve su ruta."""
+    if not TEMPLATE_PATH.is_file():
+        raise FileNotFoundError(f"No se encontró la plantilla morada: {TEMPLATE_PATH}")
+    if len(cot.productos) > MAX_PRODUCTOS:
+        raise ValueError(
+            f"La plantilla admite hasta {MAX_PRODUCTOS} productos por cotización."
+        )
 
+    PDF_DIR.mkdir(parents=True, exist_ok=True)
     ruta = PDF_DIR / f"{cot.numero}.pdf"
-    documento = pymupdf.open(str(TEMPLATE_PATH))
-    pagina = documento[0]
 
-    # Encabezado de la empresa (blanco sobre morado)
-    _insert_text(pagina, 190, 63, EMPRESA, size=17, color=(255, 255, 255), font="helv")
-    _insert_text(pagina, 126, 82, f"NIT: {NIT_EMPRESA}", size=10, color=(255, 255, 255), font="helv")
-    _insert_text(pagina, 250, 82, f"|  Tel: {TEL_EMPRESA}", size=10, color=(255, 255, 255), font="helv")
-    _insert_text(pagina, 420, 82, f"|  {EMAIL_EMPRESA}", size=10, color=(255, 255, 255), font="helv")
+    with pymupdf.open(str(TEMPLATE_PATH)) as documento:
+        pagina = documento[0]
 
-    # Datos generales
-    _insert_text(pagina, 235, 110, "COTIZACION", size=18, color=(44, 62, 80), font="helv")
-    _insert_text(pagina, 178, 130, f"Nro.: {cot.numero}", size=11, color=(0, 0, 0), font="helv")
-    _insert_text(
-        pagina,
-        120,
-        150,
-        f"Fecha emision: {cot.fecha_emision}      Valida hasta: {cot.fecha_vencimiento}",
-        size=10,
-        color=(0, 0, 0),
-        font="helv",
-    )
+        # Número y fechas: se escriben en los espacios que ya trae la plantilla.
+        _insert_text(pagina, pymupdf.Rect(239, 102, 379, 118), cot.numero, size=9)
+        _insert_text(pagina, pymupdf.Rect(220, 119, 296, 135), str(cot.fecha_emision), size=8)
+        _insert_text(
+            pagina,
+            pymupdf.Rect(363, 119, 439, 135),
+            str(cot.fecha_vencimiento),
+            size=8,
+        )
 
-    # Datos del cliente
-    _insert_text(pagina, 42, 195, "Nombre:", size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 125, 195, cot.cliente.nombre, size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 42, 220, "Empresa:", size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 125, 220, cot.cliente.empresa, size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 42, 245, "NIT / Cedula:", size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 125, 245, cot.cliente.nit, size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 42, 270, "Direccion:", size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 125, 270, cot.cliente.direccion, size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 42, 295, "Telefono:", size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 125, 295, cot.cliente.telefono, size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 42, 320, "Email:", size=11, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 125, 320, cot.cliente.email, size=11, color=(0, 0, 0), font="helv")
+        # Los nombres de los campos ya están impresos en la plantilla morada.
+        cliente = cot.cliente
+        datos_cliente = (
+            cliente.nombre,
+            cliente.empresa,
+            cliente.nit,
+            cliente.direccion,
+            cliente.telefono,
+            cliente.email,
+        )
+        for index, valor in enumerate(datos_cliente):
+            y = 172.5 + index * 19.84
+            _insert_text(pagina, pymupdf.Rect(121, y, 560, y + 14), valor, size=9)
 
-    # Productos y tabla
-    inicio_y = 370
-    for index, producto in enumerate(cot.productos[:6]):
-        y = inicio_y - (index * 26)
-        _insert_text(pagina, 38, y, producto.descripcion[:38], size=9, color=(0, 0, 0), font="helv")
-        _insert_text(pagina, 345, y, str(producto.cantidad), size=9, color=(0, 0, 0), font="helv")
-        _insert_text(pagina, 392, y, f"${producto.precio_unitario:,.0f}", size=9, color=(0, 0, 0), font="helv")
-        _insert_text(pagina, 462, y, f"{producto.descuento_pct:.0f}%", size=9, color=(0, 0, 0), font="helv")
-        _insert_text(pagina, 510, y, f"{producto.iva_pct:.0f}%", size=9, color=(0, 0, 0), font="helv")
-        _insert_text(pagina, 525, y, f"${producto.total:,.0f}", size=9, color=(0, 0, 0), font="helv")
+        columnas = (
+            (31, 246, pymupdf.TEXT_ALIGN_LEFT),
+            (251, 304, pymupdf.TEXT_ALIGN_CENTER),
+            (309, 394, pymupdf.TEXT_ALIGN_RIGHT),
+            (399, 451, pymupdf.TEXT_ALIGN_CENTER),
+            (456, 503, pymupdf.TEXT_ALIGN_CENTER),
+            (508, 564, pymupdf.TEXT_ALIGN_RIGHT),
+        )
+        for index, producto in enumerate(cot.productos):
+            top = 323.2 + index * 19.84
+            bottom = top + 19.84
+            valores = (
+                producto.descripcion,
+                str(producto.cantidad),
+                f"${producto.precio_unitario:,.0f}",
+                f"{producto.descuento_pct:.0f}%",
+                f"{producto.iva_pct:.0f}%",
+                f"${producto.total:,.0f}",
+            )
+            for valor, (x0, x1, align) in zip(valores, columnas):
+                _insert_text(
+                    pagina,
+                    pymupdf.Rect(x0, top + 1, x1, bottom - 1),
+                    valor,
+                    size=8,
+                    align=align,
+                )
 
-    # Totales
-    _insert_text(pagina, 420, 525, "Subtotal:", size=10, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 500, 525, f"$ {cot.subtotal_bruto:,.0f} COP", size=10, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 420, 545, "Descuentos (-):", size=10, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 500, 545, f"$ {cot.total_descuentos:,.0f} COP", size=10, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 420, 565, "Base imponible:", size=10, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 500, 565, f"$ {cot.base_imponible:,.0f} COP", size=10, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 420, 585, "IVA (%):", size=10, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 500, 585, f"$ {cot.total_iva:,.0f} COP", size=10, color=(0, 0, 0), font="helv")
-    _insert_text(pagina, 420, 610, "TOTAL:", size=12, color=COLOR_MORADO, font="helv")
-    _insert_text(pagina, 500, 610, f"$ {cot.total:,.0f} COP", size=12, color=COLOR_MORADO, font="helv")
+        totales = (
+            cot.subtotal_bruto,
+            cot.total_descuentos,
+            cot.base_imponible,
+            cot.total_iva,
+            cot.total,
+        )
+        for index, valor in enumerate(totales):
+            top = (539.5, 559.4, 579.2, 599.1, 621.5)[index]
+            _insert_text(
+                pagina,
+                pymupdf.Rect(440, top, 560, top + 14),
+                f"$ {valor:,.0f} COP",
+                size=9 if index < 4 else 10,
+                align=pymupdf.TEXT_ALIGN_RIGHT,
+            )
 
-    # Notas
-    if cot.notas:
-        _insert_textbox(pagina, 44, 640, 500, 90, cot.notas, size=10)
+        if cot.notas:
+            rect = pymupdf.Rect(30, 674, 561, 758)
+            remaining = pagina.insert_textbox(
+                rect,
+                str(cot.notas),
+                fontsize=9,
+                fontname="helv",
+            )
+            if remaining < 0:
+                raise ValueError("Las notas exceden el espacio disponible en la plantilla.")
 
-    # Mantener segunda página de la plantilla para firma
-    documento.save(str(ruta))
+        documento.save(str(ruta))
+
     return ruta

@@ -138,8 +138,10 @@ def _exportar_pdf(cot: Cotizacion):
         ruta = generar_pdf(cot)
         print(f"\n  PDF generado: {ruta}")
     except ImportError:
-        print("\n  fpdf2 no está instalado.")
-        print("     Ejecuta: pip install fpdf2")
+        print("\n  PyMuPDF no está instalado.")
+        print("     Ejecuta: pip install -r requirements.txt")
+    except (FileNotFoundError, ValueError) as error:
+        print(f"\n  No se pudo generar el PDF: {error}")
 
 
 #  Historial de cotizaciones 
