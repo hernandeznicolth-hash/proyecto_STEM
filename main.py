@@ -25,7 +25,7 @@ def pedir(prompt: str, obligatorio=True) -> str:
         valor = input(f"  {prompt}: ").strip()
         if valor or not obligatorio:
             return valor
-        print("  ⚠  Este campo es obligatorio.")
+        print("  Este campo es obligatorio.")
 
 def pedir_numero(prompt: str, tipo=float, minimo=None, opcional=False) -> float | None:
     while True:
@@ -35,11 +35,11 @@ def pedir_numero(prompt: str, tipo=float, minimo=None, opcional=False) -> float 
         try:
             valor = tipo(raw)
             if minimo is not None and valor < minimo:
-                print(f"  ⚠  El valor mínimo es {minimo}.")
+                print(f"  El valor mínimo es {minimo}.")
                 continue
             return valor
         except ValueError:
-            print("  ⚠  Ingresa un número válido.")
+            print("  Ingresa un número válido.")
 
 def confirmar(pregunta: str) -> bool:
     r = input(f"  {pregunta} [s/n]: ").strip().lower()
@@ -81,7 +81,7 @@ def _registrar_cliente() -> Cliente:
         email     = pedir("Email", obligatorio=False),
     )
     db.guardar_cliente(cliente)
-    print(f"\n  ✅ Cliente registrado con ID: {cliente.id_cliente}")
+    print(f"\n  Cliente registrado con ID: {cliente.id_cliente}")
     return cliente
 
 
@@ -122,11 +122,11 @@ def nueva_cotizacion():
     print(cot.resumen())
 
     if not confirmar("\n  ¿Guardar esta cotización?"):
-        print("  ❌ Cotización cancelada.")
+        print("  Cotización cancelada.")
         return
 
     db.guardar_cotizacion(cot)
-    print(f"\n  ✅ Cotización guardada: {cot.numero}")
+    print(f"\n  Cotización guardada: {cot.numero}")
 
     if confirmar("  ¿Exportar a PDF?"):
         _exportar_pdf(cot)
@@ -136,9 +136,9 @@ def _exportar_pdf(cot: Cotizacion):
     try:
         from services.pdf_generator import generar_pdf
         ruta = generar_pdf(cot)
-        print(f"\n  📄 PDF generado: {ruta}")
+        print(f"\n  PDF generado: {ruta}")
     except ImportError:
-        print("\n  ⚠  fpdf2 no está instalado.")
+        print("\n  fpdf2 no está instalado.")
         print("     Ejecuta: pip install fpdf2")
 
 
@@ -171,7 +171,7 @@ def ver_historial():
 def _detalle_cotizacion(id_cot: int):
     cot = db.cargar_cotizacion(id_cot)
     if not cot:
-        print("  ⚠  No se encontró la cotización.")
+        print("  No se encontró la cotización.")
         return
 
     limpiar()
@@ -186,9 +186,9 @@ def _detalle_cotizacion(id_cot: int):
     if op == 1:
         _exportar_pdf(cot)
     elif op == 2:
-        if confirmar("  ⚠  ¿Eliminar definitivamente esta cotización?"):
+        if confirmar("  ¿Eliminar definitivamente esta cotización?"):
             db.eliminar_cotizacion(id_cot)
-            print("  🗑  Cotización eliminada.")
+            print("  Cotización eliminada.")
     pausar()
 
 
@@ -198,7 +198,7 @@ def menu_principal():
     db.inicializar_bd()
     while True:
         limpiar()
-        titulo("🧾  COTIZADOR DE FACTURAS — Colombia (COP)")
+        titulo("COTIZADOR DE FACTURAS — Colombia (COP)")
         print("  [1] Nueva cotización")
         print("  [2] Ver historial")
         print("  [0] Salir")
@@ -211,10 +211,10 @@ def menu_principal():
         elif op == "2":
             ver_historial()
         elif op == "0":
-            print("\n  👋 ¡Hasta luego!\n")
+            print("\n  ¡Hasta luego!\n")
             sys.exit(0)
         else:
-            print("  ⚠  Opción no válida.")
+            print("  Opción no válida.")
             pausar()
 
 
