@@ -11,17 +11,22 @@ from pathlib import Path
 from fpdf import FPDF
 
 PDF_DIR = Path(__file__).parent / "pdfs"
+DATA_DIR = Path(__file__).parent / "data"
 
 _FONTS_WIN    = Path("C:/Windows/Fonts")
 _FONT_REGULAR = str(_FONTS_WIN / "calibri.ttf")
 _FONT_BOLD    = str(_FONTS_WIN / "calibrib.ttf")
 _FONT_ITALIC  = str(_FONTS_WIN / "calibrii.ttf")
 
-MORADO = (112, 48, 160)
-AZUL   = MORADO  # Alias para compatibilidad
-GRIS   = (245, 242, 248)
-OSCURO = (44, 62, 80)
-LINEA  = (215, 210, 225)
+# Colores extraídos del logo Nicolttissue
+FONDO_LOGO   = (253, 241, 243)  # Fondo rosa suave exacto del logo
+ROSA_MARCA   = (214, 94, 131)   # Rosa elegante del logo (texto y crochet)
+ROSA_OSCURO  = (160, 50, 85)    # Rosa oscuro para textos destacados
+MORADO       = ROSA_MARCA       # Reemplazo de tono principal para mantener compatibilidad
+AZUL         = ROSA_MARCA
+GRIS         = FONDO_LOGO       # Filas alternas con el tono rosa suave del logo
+OSCURO       = (55, 45, 50)     # Gris cálido legible para el cuerpo del texto
+LINEA        = (238, 208, 218)  # Líneas sutiles a tono
 
 
 class PlantillaPDF(FPDF):
@@ -32,31 +37,39 @@ class PlantillaPDF(FPDF):
         self.add_font("CAL", style="I", fname=_FONT_ITALIC)
 
     def header(self):
-        # Banda morada superior
-        self.set_fill_color(*MORADO)
+        # Banda superior con el color exacto del fondo del logo
+        self.set_fill_color(*FONDO_LOGO)
         self.rect(0, 0, 210, 30, "F")
 
-        # Espacio para logo (recuadro punteado)
-        self.set_draw_color(255, 255, 255)
-        self.set_line_width(0.4)
-        self.rect(10, 5, 28, 20)
-        self.set_font("CAL", "I", 7)
-        self.set_text_color(255, 255, 255)
-        self.set_xy(10, 12)
-        self.cell(28, 5, "  LOGO", align="C")
+        # Inserción del logo
+        logo_candidatos = [
+            DATA_DIR / "logo.png",
+            DATA_DIR / "logo.png.jpg",
+            DATA_DIR / "logo.jpg",
+        ]
+        logo_path = next((p for p in logo_candidatos if p.is_file()), None)
+        if logo_path:
+            self.image(str(logo_path), x=10, y=3.5, w=23, h=23)
 
-        # Nombre empresa
-        self.set_text_color(255, 255, 255)
-        self.set_font("CAL", "B", 18)
-        self.set_xy(42, 6)
-        self.cell(0, 9, "NOMBRE DE LA EMPRESA", ln=True)
+        # Nombre empresa y eslogan
+        self.set_text_color(*ROSA_OSCURO)
+        self.set_font("CAL", "B", 16)
+        self.set_xy(36, 4.5)
+        self.cell(0, 7, "NICOLTTISSUE")
 
-        self.set_font("CAL", "", 9)
-        self.set_x(42)
-        self.cell(0, 5, "NIT: ______________  |  Tel: ______________  |  email@empresa.com", ln=True)
+        self.set_font("CAL", "I", 9.5)
+        self.set_text_color(*ROSA_MARCA)
+        self.set_xy(36, 11.5)
+        self.cell(0, 5, "Tejiendo fibras del alma")
+
+        self.set_font("CAL", "B", 9)
+        self.set_text_color(*OSCURO)
+        self.set_xy(36, 17.5)
+        self.cell(0, 5, "NIT: 1.043.753-8   |   CEL: (300) 284 2461")
 
         self.set_text_color(0, 0, 0)
-        self.ln(7)
+        # Fijar y exactamente en 27 mm para que el cuerpo empiece exactamente igual al original
+        self.set_y(27)
 
     def footer(self):
         self.set_y(-13)
@@ -189,16 +202,17 @@ def generar_plantilla() -> Path:
     pdf.cell(5,  5, "")
     pdf.cell(90, 5, "Firma del cliente / Vo. Bo.", align="C")
 
-    try:
-        pdf.output(str(ruta))
-    except PermissionError:
-        ruta_alt = PDF_DIR / "PLANTILLA_COTIZACION_MORADA.pdf"
-        pdf.output(str(ruta_alt))
-        print(f"\n  [!] '{ruta.name}' está abierto en un visor de PDF.")
-        print(f"      Se generó la versión morada como: {ruta_alt.name}")
-        print(f"      Cierra el archivo en tu lector de PDF para actualizar el original.\n")
-        return ruta_alt
-    return ruta
+    # Guardar tanto en PLANTILLA_COTIZACION_MORADA.pdf (usada por el generador) como en PLANTILLA_COTIZACION.pdf
+    ruta_morada = PDF_DIR / "PLANTILLA_COTIZACION_MORADA.pdf"
+    ruta_std = PDF_DIR / "PLANTILLA_COTIZACION.pdf"
+
+    for r in (ruta_morada, ruta_std):
+        try:
+            pdf.output(str(r))
+        except PermissionError:
+            print(f"  [!] '{r.name}' está abierto en un visor de PDF. Ciérralo para sobrescribir.")
+
+    return ruta_morada
 
 
 if __name__ == "__main__":

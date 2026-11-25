@@ -6,6 +6,7 @@ import pymupdf
 from models.cotizacion import Cotizacion
 
 PDF_DIR = Path(__file__).resolve().parent.parent / "pdfs"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 TEMPLATE_PATH = PDF_DIR / "PLANTILLA_COTIZACION_MORADA.pdf"
 MAX_PRODUCTOS = 10
 
@@ -42,6 +43,17 @@ def generar_pdf(cot: Cotizacion) -> Path:
 
     with pymupdf.open(str(TEMPLATE_PATH)) as documento:
         pagina = documento[0]
+
+        # Si la plantilla base no incluye el logo, estamparlo dinámicamente
+        if len(pagina.get_images()) == 0:
+            logo_candidatos = [
+                DATA_DIR / "logo.png",
+                DATA_DIR / "logo.png.jpg",
+                DATA_DIR / "logo.jpg",
+            ]
+            logo_path = next((p for p in logo_candidatos if p.is_file()), None)
+            if logo_path:
+                pagina.insert_image(pymupdf.Rect(28, 10, 104, 84), filename=str(logo_path), keep_proportion=True)
 
         # Número y fechas: se escriben en los espacios que ya trae la plantilla.
         _insert_text(pagina, pymupdf.Rect(239, 102, 379, 118), cot.numero, size=9)

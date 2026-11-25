@@ -44,7 +44,7 @@ cotizacion = Cotizacion(cliente=cliente, productos=productos, notas=notas)
 # ── Generar PDF ──────────────────────────────────────────────────────────────
 
 ruta = generar_pdf(cotizacion)
-print(f"\n  ✅ PDF generado exitosamente:")
+print(f"\n   PDF generado exitosamente:")
 print(f"     {ruta}\n")
 print(f"  Resumen:")
 print(cotizacion.resumen())

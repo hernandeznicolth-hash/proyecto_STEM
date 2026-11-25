@@ -12,7 +12,7 @@ class Cotizacion:
     VALIDEZ_DIAS = 30   # días de validez por defecto
 
     def __init__(self, cliente: Cliente, productos: list[Producto] = None,
-                 notas: str = "", id_cotizacion=None, numero: str = None,
+                 notas: str = "", id_cotizacion=None, numero: int = None, 
                  fecha_emision: date = None, fecha_vencimiento: date = None):
         self.id_cotizacion    = id_cotizacion
         self.numero           = numero or self._generar_numero()
@@ -22,13 +22,17 @@ class Cotizacion:
         self.productos        = productos or []
         self.notas            = notas
 
-    # ── Número único ──────────────────────────────────────────────────────────
+    # ── Número secuencial ─────────────────────────────────────────────────────
 
     @staticmethod
     def _generar_numero() -> str:
-        hoy = date.today()
-        uid = str(uuid.uuid4())[:8].upper()
-        return f"COT-{hoy.year}{hoy.month:02d}{hoy.day:02d}-{uid}"
+        try:
+            from services.storage import obtener_siguiente_numero_cotizacion
+            return obtener_siguiente_numero_cotizacion()
+        except Exception:
+            hoy = date.today()
+            uid = str(uuid.uuid4())[:6].upper()
+            return f"COT-{hoy.year}-{uid}"
 
     # ── Totales ───────────────────────────────────────────────────────────────
 

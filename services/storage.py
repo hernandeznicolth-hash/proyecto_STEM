@@ -132,7 +132,19 @@ def _fila_a_cliente(fila) -> Cliente:
 
 # ── COTIZACIONES ──────────────────────────────────────────────────────────────
 
+def obtener_siguiente_numero_cotizacion() -> str:
+    """Calcula el siguiente número secuencial de cotización según el orden de creación."""
+    inicializar_bd()
+    with _conectar() as conn:
+        fila = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM cotizaciones").fetchone()
+        siguiente = fila[0] if fila else 1
+    return f"COT-{siguiente:04d}"
+
+
 def guardar_cotizacion(cot: Cotizacion) -> Cotizacion:
+    if not cot.numero:
+        cot.numero = obtener_siguiente_numero_cotizacion()
+
     with _conectar() as conn:
         cur = conn.execute(
             """INSERT INTO cotizaciones

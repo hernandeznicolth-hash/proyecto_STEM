@@ -9,7 +9,6 @@ from models.producto   import Producto
 from models.cotizacion import Cotizacion
 import services.storage as db
 
-
 # Utilidades de consola 
 
 def limpiar():
@@ -119,15 +118,50 @@ def _registrar_cliente() -> Cliente:
 #  Gestión de productos     
 
 def agregar_productos() -> list[Producto]:
+    from services.catalogo import cargar_catalogo
+
     titulo("AGREGAR PRODUCTOS / SERVICIOS")
+    catalogo = cargar_catalogo()
     productos = []
+
     while True:
-        print(f"\n  Ítem #{len(productos) + 1}")
-        descripcion     = pedir("Descripción del producto/servicio")
-        cantidad        = pedir_numero("Cantidad", tipo=float, minimo=0.001)
-        precio_unitario = pedir_numero("Precio unitario (COP)", tipo=float, minimo=0)
-        descuento_pct   = pedir_numero("Descuento % (Enter = 0)", tipo=float, minimo=0, opcional=True) or 0.0
-        iva_pct         = pedir_numero("IVA % (Enter = 19)", tipo=float, minimo=0, opcional=True)
+        print(f"\n  ── Ítem #{len(productos) + 1} ──────────────────────────────────────")
+
+        if catalogo:
+            print("\n  Catálogo de Productos (Nicolttissue):")
+            for idx, item in enumerate(catalogo, 1):
+                print(f"    [{idx}] {item['nombre_completo']:<45} $ {item['precio']:>10,.0f} COP")
+            print("    [0] Ingresar producto manualmente")
+
+            seleccion = pedir_numero(
+                f"\n  Selecciona un producto [1-{len(catalogo)}] o 0 para manual",
+                tipo=int,
+                minimo=0,
+            )
+
+            if seleccion and 1 <= seleccion <= len(catalogo):
+                elegido = catalogo[seleccion - 1]
+                descripcion = elegido["nombre_completo"]
+                precio_base = elegido["precio"]
+                print(f"  -> Elegido: {descripcion}")
+
+                precio_in = pedir_numero(
+                    f"  Precio unitario COP (Enter = ${precio_base:,.0f})",
+                    tipo=float,
+                    minimo=0,
+                    opcional=True,
+                )
+                precio_unitario = precio_base if precio_in is None else precio_in
+            else:
+                descripcion = pedir("Descripción del producto/servicio")
+                precio_unitario = pedir_numero("Precio unitario (COP)", tipo=float, minimo=0)
+        else:
+            descripcion = pedir("Descripción del producto/servicio")
+            precio_unitario = pedir_numero("Precio unitario (COP)", tipo=float, minimo=0)
+
+        cantidad      = pedir_numero("Cantidad", tipo=float, minimo=0.001)
+        descuento_pct = pedir_numero("Descuento % (Enter = 0)", tipo=float, minimo=0, opcional=True) or 0.0
+        iva_pct       = pedir_numero("IVA % (Enter = 19)", tipo=float, minimo=0, opcional=True)
         if iva_pct is None:
             iva_pct = 19.0
 
@@ -137,6 +171,7 @@ def agregar_productos() -> list[Producto]:
 
         if not confirmar("\n  ¿Agregar otro producto/servicio?"):
             break
+
     return productos
 
 
