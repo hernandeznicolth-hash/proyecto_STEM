@@ -1,0 +1,29 @@
+# Estilo y paleta en tonalidades rosa / rose aesthetic para el Cotizador de Facturas
+
+[theme]
+base = "light"
+primaryColor = "#e11d48"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#fff1f2"
+textColor = "#871b5e"
+linkColor = "#db2777"
+borderColor = "#fecdd3"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "0.6rem"
+buttonRadius = "0.6rem"
+dataframeHeaderBackgroundColor = "#ffe4e6"
+dataframeBorderColor = "#fecdd3"
+chartCategoricalColors = ["#e11d48", "#db2777", "#ec4899", "#f43f5e", "#fb7185", "#fda4af", "#be123c"]
+
+[theme.sidebar]
+backgroundColor = "#fff5f7"
+secondaryBackgroundColor = "#ffe4e6"
+textColor = "#4c0519"
+borderColor = "#fecdd3"
+primaryColor = "#e11d48"
+dataframeHeaderBackgroundColor = "#fce7f3"
+dataframeBorderColor = "#fecdd3"
+
+[server]
+headless = true
